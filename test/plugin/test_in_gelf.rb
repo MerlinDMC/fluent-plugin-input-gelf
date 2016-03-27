@@ -69,4 +69,53 @@ class GelfInputTest < Test::Unit::TestCase
       }
     }
   end
+
+  def test_strip_leading_underscore
+    configs = {'127.0.0.1' => CONFIG}
+    # gelf-rb currently does not support IPv6 over UDP
+    # configs.merge!('::1' => IPv6_CONFIG) if ipv6_enabled?
+
+    configs.each_pair { |k, v|
+      d = create_driver(v)
+
+      tests = [
+        {:given =>
+         {
+           :timestamp => 12345,
+           :short_message => 'short message',
+           :full_message => 'full message',
+           '_custom_field' => 12345
+         },
+         :expected =>
+         {
+           'short_message' => 'short message',
+           'full_message' => 'full message',
+           'custom_field' => 12345
+         }
+        }
+      ]
+
+      d.run do
+        n = GELF::Notifier.new(k, PORT)
+
+        tests.each { |test|
+          n.notify!(test[:given])
+        }
+
+        sleep 1
+      end
+
+      emits = d.emits
+      assert_equal tests.length, emits.length, 'missing emitted events'
+      emits.each_index { |i|
+        puts emits[i].to_s
+        assert_equal 'gelf', emits[i][0]
+        assert_equal tests[i][:timestamp].to_i, emits[i][1] unless tests[i][:timestamp].nil?
+        assert_block "expectation not met: #{tests[i][:expected]}" do
+          emits[i][2].merge(tests[i][:expected]) == emits[i][2]
+        end
+      }
+    }
+  end
+
 end

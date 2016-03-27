@@ -36,6 +36,8 @@ module Fluent
       end
     end
     config_param :blocking_timeout, :time, default: 0.5
+    desc 'Strip leading underscore'
+    config_param :strip_leading_underscore, :bool, default: true
 
     def configure(conf)
       super
@@ -86,6 +88,9 @@ module Fluent
         # Use the recorded event time if available
         time = record.delete('timestamp').to_i if record.key?('timestamp')
 
+        # Postprocess recorded event
+        strip_leading_underscore(record) if @strip_leading_underscore
+
         emit(time, record)
       }
     rescue => e
@@ -108,6 +113,15 @@ module Fluent
       router.emit(@tag, time, record)
     rescue => e
       log.error 'gelf failed to emit', error: e.to_s, error_class: e.class.to_s, tag: @tag, record: Yajl.dump(record)
+    end
+
+    private
+
+    def strip_leading_underscore(record)
+      record.keys.each { |k|
+        next unless k[0,1] == '_'
+        record[k[1..-1]] = record.delete(k)
+      }
     end
   end
 end
