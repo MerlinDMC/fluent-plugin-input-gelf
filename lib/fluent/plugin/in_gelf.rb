@@ -13,7 +13,7 @@ module Fluent
     def initialize
       super
       require 'fluent/plugin/socket_util'
-      require 'gelfd'
+      require 'gelfd2'
     end
 
     desc "The value is the tag assigned to the generated events."
@@ -70,7 +70,7 @@ module Fluent
 
     def receive_data(data, addr)
       begin
-        msg = Gelfd::Parser.parse(data)
+        msg = Gelfd2::Parser.parse(data)
       rescue => e
         log.warn 'Gelfd failed to parse a message', error: e.to_s
         log.warn_backtrace
