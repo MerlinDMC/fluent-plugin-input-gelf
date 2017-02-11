@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
 
   gem.add_runtime_dependency "fluentd"
-  gem.add_runtime_dependency "gelfd", ">= 0.2.0"
+  gem.add_runtime_dependency "gelfd2", ">= 0.3.0"
 
   gem.add_development_dependency "bundler"
   gem.add_development_dependency "rake"
