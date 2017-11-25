@@ -70,7 +70,7 @@ module Fluent::Plugin
         end
 
         # Use the recorded event time if available
-        time = record.delete('timestamp').to_i if record.key?('timestamp')
+        time = record.delete('timestamp').to_f if record.key?('timestamp')
 
         # Postprocess recorded event
         strip_leading_underscore_(record) if @strip_leading_underscore
