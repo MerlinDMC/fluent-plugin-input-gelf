@@ -5,9 +5,10 @@ require 'cool.io'
 require 'yajl'
 
 require 'fluent/input'
+require 'fluent/plugin/socket_util'
 
 module Fluent
-  class UdpHandler < Fluent::SocketUtil::UdpHandler
+  class UdpHandler < SocketUtil::UdpHandler
       def initialize(io, log, body_size_limit, callback)
        super
       end
