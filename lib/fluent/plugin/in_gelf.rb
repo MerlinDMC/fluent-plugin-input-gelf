@@ -7,6 +7,17 @@ require 'yajl'
 require 'fluent/input'
 
 module Fluent
+  class UdpHandler < SocketUtil::UdpHandler
+      def initialize(io, log, body_size_limit, callback)
+       super
+      end
+      def on_readable
+        msg, addr = @io.recvfrom_nonblock(@body_size_limit)
+        @callback.call(msg, addr)
+      rescue => e
+        @log.error "unexpected error", error: e, error_class: e.class
+      end
+  end
   class GelfInput < Fluent::Input
     Fluent::Plugin.register_input('gelf', self)
 
@@ -105,7 +116,7 @@ module Fluent
       else
         @usock = SocketUtil.create_udp_socket(@bind)
         @usock.bind(@bind, @port)
-        SocketUtil::UdpHandler.new(@usock, log, 8192, callback)
+        UdpHandler.new(@usock, log, 8192, callback)
       end
     end
 
