@@ -114,7 +114,7 @@ module Fluent
     def listen(callback)
       log.info "listening gelf socket on #{@bind}:#{@port} with #{@protocol_type}"
       if @protocol_type == :tcp
-        Coolio::TCPServer.new(@bind, @port, SocketUtil::TcpHandler, log, "\n", callback)
+        Coolio::TCPServer.new(@bind, @port, SocketUtil::TcpHandler, log, "\0", callback)
       else
         @usock = SocketUtil.create_udp_socket(@bind)
         @usock.bind(@bind, @port)
