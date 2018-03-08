@@ -7,7 +7,7 @@ require 'yajl'
 require 'fluent/input'
 
 module Fluent
-  class UdpHandler < SocketUtil::UdpHandler
+  class UdpHandler < Fluent::SocketUtil::UdpHandler
       def initialize(io, log, body_size_limit, callback)
        super
       end
@@ -18,6 +18,7 @@ module Fluent
         @log.error "unexpected error", error: e, error_class: e.class
       end
   end
+
   class GelfInput < Fluent::Input
     Fluent::Plugin.register_input('gelf', self)
 
