@@ -10,7 +10,7 @@ module Fluent::Plugin
   class GelfInput < Fluent::Plugin::Input
     Fluent::Plugin.register_input('gelf', self)
 
-    helpers :parser, :compat_parameters
+    helpers :server, :parser, :compat_parameters
 
     DEFAULT_PARSER = 'json'.freeze
 
@@ -53,25 +53,13 @@ module Fluent::Plugin
     end
 
     def start
-      @loop = Coolio::Loop.new
-      @handler = listen(method(:receive_data))
-      @loop.attach(@handler)
+      super
 
-      @thread = Thread.new(&method(:run))
+      listen
     end
 
     def shutdown
-      @loop.watchers.each { |w| w.detach }
-      @loop.stop
-      @handler.close
-      @thread.join
-    end
-
-    def run
-      @loop.run(@blocking_timeout)
-    rescue
-      log.error 'unexpected error', error: $!.to_s
-      log.error_backtrace
+      super
     end
 
     def receive_data(data, addr)
@@ -104,14 +92,16 @@ module Fluent::Plugin
       log.error_backtrace
     end
 
-    def listen(callback)
+    def listen
       log.info "listening gelf socket on #{@bind}:#{@port} with #{@protocol_type}"
       if @protocol_type == :tcp
-        Coolio::TCPServer.new(@bind, @port, Fluent::SocketUtil::TcpHandler, log, "\n", callback)
+        server_create(:in_tcp_server, @port, bind: @bind) do |data, conn|
+          receive_data(data, conn)
+        end
       else
-        @usock = Fluent::SocketUtil.create_udp_socket(@bind)
-        @usock.bind(@bind, @port)
-        Fluent::SocketUtil::UdpHandler.new(@usock, log, 8192, callback)
+        server_create(:in_udp_server, @port, proto: :udp, bind: @bind, max_bytes: 8192) do |data, sock|
+          receive_data(data, sock)
+        end
       end
     end
 
