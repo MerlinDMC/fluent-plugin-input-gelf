@@ -20,7 +20,7 @@ class GelfInputTest < Test::Unit::TestCase
   !
 
   def create_driver(conf)
-    Fluent::Test::InputTestDriver.new(Fluent::GelfInput).configure(conf)
+    Fluent::Test::Driver::Input.new(Fluent::Plugin::GelfInput).configure(conf)
   end
 
   def test_configure
@@ -31,7 +31,7 @@ class GelfInputTest < Test::Unit::TestCase
       d = create_driver(v)
       assert_equal PORT, d.instance.port
       assert_equal k, d.instance.bind
-      assert_equal 'json', d.instance.format
+      assert_equal 'json', d.instance.parser_configs.first["@type"]
     }
   end
 
@@ -48,17 +48,15 @@ class GelfInputTest < Test::Unit::TestCase
         {:short_message => 'short message', :full_message => 'full message', :timestamp => 12345678.12345}
       ]
 
-      d.run do
+      d.run(expect_emits: 2)  do
         n = GELF::Notifier.new(k, PORT)
 
         tests.each { |test|
           n.notify!(test)
         }
-
-        sleep 1
       end
 
-      emits = d.emits
+      emits = d.events
       assert_equal tests.length, emits.length, 'missing emitted events'
       emits.each_index { |i|
         puts emits[i].to_s
@@ -95,17 +93,15 @@ class GelfInputTest < Test::Unit::TestCase
         }
       ]
 
-      d.run do
+      d.run(expect_emits: 1) do
         n = GELF::Notifier.new(k, PORT)
 
         tests.each { |test|
           n.notify!(test[:given])
         }
-
-        sleep 1
       end
 
-      emits = d.emits
+      emits = d.events
       assert_equal tests.length, emits.length, 'missing emitted events'
       emits.each_index { |i|
         puts emits[i].to_s

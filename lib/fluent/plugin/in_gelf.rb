@@ -4,11 +4,15 @@ require 'time'
 require 'cool.io'
 require 'yajl'
 
-require 'fluent/input'
+require 'fluent/plugin/input'
 
-module Fluent
-  class GelfInput < Fluent::Input
+module Fluent::Plugin
+  class GelfInput < Fluent::Plugin::Input
     Fluent::Plugin.register_input('gelf', self)
+
+    helpers :parser, :compat_parameters
+
+    DEFAULT_PARSER = 'json'.freeze
 
     def initialize
       super
@@ -18,8 +22,6 @@ module Fluent
 
     desc "The value is the tag assigned to the generated events."
     config_param :tag, :string
-    desc 'The format of the payload.'
-    config_param :format, :string, default: 'json'
     desc 'The port to listen to.'
     config_param :port, :integer, default: 12201
     desc 'The bind address to listen to.'
@@ -32,18 +34,22 @@ module Fluent
       when 'udp'
         :udp
       else
-        raise ConfigError, "gelf input protocol type should be 'tcp' or 'udp'"
+        raise Fluent::ConfigError, "gelf input protocol type should be 'tcp' or 'udp'"
       end
     end
     config_param :blocking_timeout, :time, default: 0.5
     desc 'Strip leading underscore'
     config_param :strip_leading_underscore, :bool, default: true
 
+    config_section :parse do
+      config_set_default :@type, DEFAULT_PARSER
+    end
+
     def configure(conf)
+      compat_parameters_convert(conf, :parser)
       super
 
-      @parser = Plugin.new_parser(@format)
-      @parser.configure(conf)
+      @parser = parser_create
     end
 
     def start
@@ -101,11 +107,11 @@ module Fluent
     def listen(callback)
       log.info "listening gelf socket on #{@bind}:#{@port} with #{@protocol_type}"
       if @protocol_type == :tcp
-        Coolio::TCPServer.new(@bind, @port, SocketUtil::TcpHandler, log, "\n", callback)
+        Coolio::TCPServer.new(@bind, @port, Fluent::SocketUtil::TcpHandler, log, "\n", callback)
       else
-        @usock = SocketUtil.create_udp_socket(@bind)
+        @usock = Fluent::SocketUtil.create_udp_socket(@bind)
         @usock.bind(@bind, @port)
-        SocketUtil::UdpHandler.new(@usock, log, 8192, callback)
+        Fluent::SocketUtil::UdpHandler.new(@usock, log, 8192, callback)
       end
     end
 
