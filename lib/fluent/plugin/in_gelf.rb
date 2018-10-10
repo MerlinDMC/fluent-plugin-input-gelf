@@ -4,6 +4,8 @@ require 'time'
 require 'cool.io'
 require 'yajl'
 
+require 'gelfd2'
+
 require 'fluent/plugin/input'
 
 module Fluent::Plugin
@@ -16,8 +18,6 @@ module Fluent::Plugin
 
     def initialize
       super
-      require 'fluent/plugin/socket_util'
-      require 'gelfd2'
     end
 
     desc "The value is the tag assigned to the generated events."
