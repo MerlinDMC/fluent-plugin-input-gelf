@@ -27,16 +27,7 @@ module Fluent::Plugin
     desc 'The bind address to listen to.'
     config_param :bind, :string, default: '0.0.0.0'
     desc 'The transport protocol used to receive logs.(udp, tcp)'
-    config_param :protocol_type, default: :udp do |val|
-      case val.downcase
-      when 'tcp'
-        :tcp
-      when 'udp'
-        :udp
-      else
-        raise Fluent::ConfigError, "gelf input protocol type should be 'tcp' or 'udp'"
-      end
-    end
+    config_param :protocol_type, :enum, list: [:udp, :tcp], default: :udp
     desc 'Strip leading underscore'
     config_param :strip_leading_underscore, :bool, default: true
 
