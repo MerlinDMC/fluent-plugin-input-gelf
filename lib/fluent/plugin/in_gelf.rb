@@ -37,7 +37,6 @@ module Fluent::Plugin
         raise Fluent::ConfigError, "gelf input protocol type should be 'tcp' or 'udp'"
       end
     end
-    config_param :blocking_timeout, :time, default: 0.5
     desc 'Strip leading underscore'
     config_param :strip_leading_underscore, :bool, default: true
 
