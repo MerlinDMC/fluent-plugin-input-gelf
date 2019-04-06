@@ -1,16 +1,31 @@
 language: ruby
 
 rvm:
-  - 2.1
-  - 2.2.2
-  - 2.3.0
-  - 2.4.0
+- 2.1
+- 2.2
+- 2.3
+- 2.4
+- 2.5
 
 gemfile:
-  - Gemfile
+- Gemfile
 
 branches:
   only:
-    - master
+  - master
 
 script: bundle exec rake test
+
+jobs:
+  include:
+  - stage: gem release
+    rvm: 2.3
+    script: echo "Deploying to rubygems.org ..."
+    deploy:
+      provider: rubygems
+      api_key:
+        secure: R06ICCYHjZ+bk+CocD+eZROiTsfDnmUlugdSIqND0f9Z+Vi8ALOZmIEhlpBvloRaOLU0pz3d9juj74vHMJ1boJN6Qgn+CtAGSDzesxm6vcd/AP87mEzAaJvvHRme7bNLy7gt1RvrmVzDjyOe2fF8kcVAz19bEArJ1rqBXeLiLY+fOPenCsWRNrOt2+yOH5qRgdFs+n2NQ6oQrDEq18uZJVQ74WnSyKGylIhPfXj+TcgMrDGJtxqWYmL+DeuzOVk73REMHiw+9ljvhjVIdMxiU/oXge9y7Ua7q6OlkJgmChaWrs06bHiwhJHz6yh+OXebVFbxHTsPdsw4w+Uv9/MB961zgR58yLVi6AJr5xosM8l92S/OJeG9paO43xuQGeX+mch7m/827VbeM8aLtRGXjNILC3BW+l9O++Yg0eF6YC4c6NobNOX4ZpfGNopDsoyYI19Yj9SoKvoqw3WtAZsX2T5CrAdG1PHLKNDwyCbuiYjlNKAAHy5ZCB7X63JrDAKgwUQSnYEPEGNVzisnNfyqVxQnvTDZLwgzWcYxTBCjXoO09+qsbB9lpgecT45UI80VgW70nokEzilmyXARG+eBGKhz2iJli+mrdZbpfzws/PD/Hr5dubgn8mNX5/e6DRMoTr9xQOGrvdXhET+ygiTEWg1VMzfcZ2WpeJTveV9h2BQ=
+      gem: fluent-plugin-input-gelf
+      on:
+        tags: true
+        repo: MerlinDMC/fluent-plugin-input-gelf
