@@ -13,6 +13,8 @@ gemfile:
 branches:
   only:
   - master
+  # Tagged commits
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
 script: bundle exec rake test
 
