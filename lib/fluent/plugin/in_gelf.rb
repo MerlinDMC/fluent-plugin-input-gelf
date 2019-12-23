@@ -30,6 +30,12 @@ module Fluent::Plugin
     config_param :protocol_type, :enum, list: [:udp, :tcp], default: :udp
     desc 'Strip leading underscore'
     config_param :strip_leading_underscore, :bool, default: true
+    desc 'remove timestamp record from document'
+    config_param :remove_timestamp_record, :bool, default: true
+    desc 'use client provided timestamp'
+    config_param :trust_client_timestamp, :bool, default: true
+    desc 'truncate client timestamp to integer'
+    config_param :client_timestamp_to_i, :bool, default: false
 
     config_section :parse do
       config_set_default :@type, DEFAULT_PARSER
@@ -69,8 +75,21 @@ module Fluent::Plugin
           return
         end
 
-        # Use the recorded event time if available
-        time = record.delete('timestamp').to_f if record.key?('timestamp')
+        if @trust_client_timestamp && record.key?('timestamp')
+          # Fluent "time" is made up of 2 records; time_t and nsec; you can't cast a float
+          # to time; instead you must convert the remainder to a nsec INT.
+          seconds = record['timestamp'].to_i
+          if @client_timestamp_to_i
+            time = Fluent::EventTime.new(seconds)
+          else
+            nsec = ((record['timestamp'].to_f  - record['timestamp'].to_i)  * 1_000_000_000).to_i
+            time = Fluent::EventTime.new(seconds, nsec)
+          end
+          record.delete('timestamp') if @remove_timestamp_record
+        else
+          # if not trusting client timestamp or no timestamp provided
+          time = Fluent::EventTime.now
+        end
 
         # Postprocess recorded event
         strip_leading_underscore_(record) if @strip_leading_underscore
