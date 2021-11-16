@@ -1,6 +1,6 @@
 # fluent-plugin-input-gelf
 
-[![Build Status](https://travis-ci.org/andreycizov/fluent-plugin-input-gelf.svg?branch=master)](https://travis-ci.org/andreycizov/fluent-plugin-input-gelf)
+[![Build Status](https://travis-ci.org/MerlinDMC/fluent-plugin-input-gelf.svg?branch=master)](https://travis-ci.org/MerlinDMC/fluent-plugin-input-gelf)
 [![Gem Version](https://badge.fury.io/rb/fluent-plugin-input-gelf.svg)](http://badge.fury.io/rb/fluent-plugin-input-gelf)
 
 ## Overview
