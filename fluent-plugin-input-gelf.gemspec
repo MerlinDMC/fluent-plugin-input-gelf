@@ -7,7 +7,7 @@ Gem::Specification.new do |gem|
   gem.license     = "MIT"
   gem.homepage    = "https://github.com/MerlinDMC/fluent-plugin-input-gelf"
   gem.summary     = gem.description
-  gem.version     = "0.2.0"
+  gem.version     = "0.3.0"
   gem.authors     = ["Daniel Malon"]
   gem.email       = "daniel.malon@me.com"
   gem.has_rdoc    = false
@@ -16,7 +16,7 @@ Gem::Specification.new do |gem|
   gem.executables = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   gem.require_paths = ['lib']
 
-  gem.add_runtime_dependency "fluentd"
+  gem.add_runtime_dependency "fluentd", [">= 0.14.10", "< 2"]
   gem.add_runtime_dependency "gelfd2", ">= 0.3.0"
 
   gem.add_development_dependency "bundler"

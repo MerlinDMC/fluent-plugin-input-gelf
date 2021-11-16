@@ -4,10 +4,12 @@ require 'time'
 require 'cool.io'
 require 'yajl'
 
+require 'gelfd2'
+
 require 'fluent/input'
 require 'fluent/plugin/socket_util'
 
-module Fluent
+module Fluent::Plugin
   class UdpHandler < SocketUtil::UdpHandler
       def initialize(io, log, body_size_limit, callback)
        super
@@ -20,65 +22,47 @@ module Fluent
       end
   end
 
-  class GelfInput < Fluent::Input
+  class GelfInput < Fluent::Plugin::Input
     Fluent::Plugin.register_input('gelf', self)
+
+    helpers :server, :parser, :compat_parameters
+
+    DEFAULT_PARSER = 'json'.freeze
 
     def initialize
       super
-      require 'fluent/plugin/socket_util'
-      require 'gelfd2'
     end
 
     desc "The value is the tag assigned to the generated events."
     config_param :tag, :string
-    desc 'The format of the payload.'
-    config_param :format, :string, default: 'json'
     desc 'The port to listen to.'
     config_param :port, :integer, default: 12201
     desc 'The bind address to listen to.'
     config_param :bind, :string, default: '0.0.0.0'
     desc 'The transport protocol used to receive logs.(udp, tcp)'
-    config_param :protocol_type, default: :udp do |val|
-      case val.downcase
-      when 'tcp'
-        :tcp
-      when 'udp'
-        :udp
-      else
-        raise ConfigError, "gelf input protocol type should be 'tcp' or 'udp'"
-      end
-    end
-    config_param :blocking_timeout, :time, default: 0.5
+    config_param :protocol_type, :enum, list: [:udp, :tcp], default: :udp
     desc 'Strip leading underscore'
     config_param :strip_leading_underscore, :bool, default: true
 
+    config_section :parse do
+      config_set_default :@type, DEFAULT_PARSER
+    end
+
     def configure(conf)
+      compat_parameters_convert(conf, :parser)
       super
 
-      @parser = Plugin.new_parser(@format)
-      @parser.configure(conf)
+      @parser = parser_create
     end
 
     def start
-      @loop = Coolio::Loop.new
-      @handler = listen(method(:receive_data))
-      @loop.attach(@handler)
+      super
 
-      @thread = Thread.new(&method(:run))
+      listen
     end
 
     def shutdown
-      @loop.watchers.each { |w| w.detach }
-      @loop.stop
-      @handler.close
-      @thread.join
-    end
-
-    def run
-      @loop.run(@blocking_timeout)
-    rescue
-      log.error 'unexpected error', error: $!.to_s
-      log.error_backtrace
+      super
     end
 
     def receive_data(data, addr)
@@ -111,14 +95,16 @@ module Fluent
       log.error_backtrace
     end
 
-    def listen(callback)
+    def listen
       log.info "listening gelf socket on #{@bind}:#{@port} with #{@protocol_type}"
       if @protocol_type == :tcp
-        Coolio::TCPServer.new(@bind, @port, SocketUtil::TcpHandler, log, "\0", callback)
+        server_create(:in_tcp_server, @port, bind: @bind) do |data, conn|
+          receive_data(data, conn)
+        end
       else
-        @usock = SocketUtil.create_udp_socket(@bind)
-        @usock.bind(@bind, @port)
-        UdpHandler.new(@usock, log, 8192, callback)
+        server_create(:in_udp_server, @port, proto: :udp, bind: @bind, max_bytes: 8192) do |data, sock|
+          receive_data(data, sock)
+        end
       end
     end
 
