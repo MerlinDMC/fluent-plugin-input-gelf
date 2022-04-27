@@ -89,7 +89,10 @@ module Fluent::Plugin
           receive_data(data, conn)
         end
       else
-        server_create(:in_udp_server, @port, proto: :udp, bind: @bind, max_bytes: 8192) do |data, sock|
+        # Graylog is ready to accept 8192 bytes of GELF, but with
+        # chunking we need to accept at least 12 bytes of chunk header
+        # as well. But we don't need to pin us down to that either.
+        server_create(:in_udp_server, @port, proto: :udp, bind: @bind, max_bytes: 65536) do |data, sock|
           receive_data(data, sock)
         end
       end
