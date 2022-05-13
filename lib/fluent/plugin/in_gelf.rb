@@ -6,9 +6,22 @@ require 'yajl'
 
 require 'gelfd2'
 
-require 'fluent/plugin/input'
+require 'fluent/input'
+require 'fluent/plugin/socket_util'
 
 module Fluent::Plugin
+  class UdpHandler < SocketUtil::UdpHandler
+      def initialize(io, log, body_size_limit, callback)
+       super
+      end
+      def on_readable
+        msg, addr = @io.recvfrom_nonblock(@body_size_limit)
+        @callback.call(msg, addr)
+      rescue => e
+        @log.error "unexpected error", error: e, error_class: e.class
+      end
+  end
+
   class GelfInput < Fluent::Plugin::Input
     Fluent::Plugin.register_input('gelf', self)
 
@@ -70,7 +83,7 @@ module Fluent::Plugin
         end
 
         # Use the recorded event time if available
-        time = record.delete('timestamp').to_f if record.key?('timestamp')
+        time = Fluent::EventTime.from_time(Time.at(record.delete('timestamp').to_f) ) if record.key?('timestamp')
 
         # Postprocess recorded event
         strip_leading_underscore_(record) if @strip_leading_underscore
